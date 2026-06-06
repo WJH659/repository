@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>归并排序详细步骤演示</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h2 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .controls {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            margin: 0 10px;
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        #sortBtn {
+            background: #4CAF50;
+            color: white;
+        }
+        #resetBtn {
+            background: #f44336;
+            color: white;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .step-info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+        .arrays-container {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .array-section {
+            flex: 1;
+            min-width: 300px;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #dee2e6;
+        }
+        .section-title {
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 10px;
+            text-align: center;
+            font-size: 18px;
+        }
+        .array {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            min-height: 60px;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+        }
+        .item {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 8px;
+            transition: all 0.5s ease;
+        }
+        .original { background: #e9ecef; color: #495057; }
+        .left { background: #cce5ff; color: #004085; }
+        .right { background: #d4edda; color: #155724; }
+        .merged { background: #fff3cd; color: #856404; }
+        .comparing { 
+            background: #dc3545 !important; 
+            color: white !important;
+            transform: scale(1.2);
+            box-shadow: 0 0 15px rgba(220, 53, 69, 0.7);
+        }
+        .sorted { 
+            background: #28a745 !important; 
+            color: white !important;
+        }
+        .pointer {
+            position: absolute;
+            bottom: -25px;
+            font-size: 24px;
+            transition: left 0.5s ease;
+        }
+        .array-wrapper {
+            position: relative;
+            margin: 10px 0;
+        }
+        .log {
+            background: #212529;
+            color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .log-title {
+            color: #ffc107;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+            border-left: 3px solid #17a2b8;
+            padding-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>📊 归并排序详细步骤演示</h2>
+        
+        <div class="controls">
+            <button id="sortBtn" onclick="startSort()">开始排序</button>
+            <button id="resetBtn" onclick="resetArray()">重置数组</button>
+        </div>
+
+        <div class="step-info" id="stepInfo">
+            点击"开始排序"按钮，观察归并排序的详细步骤
+        </div>
+
+        <div class="arrays-container">
+            <div class="array-section">
+                <div class="section-title">原始数组</div>
+                <div class="array" id="originalArray"></div>
+            </div>
+            
+            <div class="array-section">
+                <div class="section-title">左子数组</div>
+                <div class="array-wrapper">
+                    <div class="array" id="leftArray"></div>
+                    <div class="pointer" id="leftPointer">👆</div>
+                </div>
+            </div>
+            
+            <div class="array-section">
+                <div class="section-title">右子数组</div>
+                <div class="array-wrapper">
+                    <div class="array" id="rightArray"></div>
+                    <div class="pointer" id="rightPointer">👆</div>
+                </div>
+            </div>
+            
+            <div class="array-section">
+                <div class="section-title">合并结果</div>
+                <div class="array" id="mergedArray"></div>
+            </div>
+        </div>
+
+        <div class="log">
+            <div class="log-title">📝 操作日志</div>
+            <div id="logContent"></div>
+        </div>
+    </div>
+
+    <script>
+        let originalArr = [5, 2, 9, 1, 5, 6, 3];
+        let stepDelay = 800; // 每一步的延迟时间（毫秒）
+        let isSorting = false;
+        
+        // 初始化显示
+        window.onload = function() {
+            renderOriginalArray();
+            resetLog();
+        };
+        
+        function renderOriginalArray() {
+            const container = document.getElementById('originalArray');
+            container.innerHTML = '';
+            originalArr.forEach(num => {
+                const div = document.createElement('div');
+                div.className = 'item original';
+                div.textContent = num;
+                container.appendChild(div);
+            });
+        }
+        
+        function resetArray() {
+            if (isSorting) return;
+            originalArr = [5, 2, 9, 1, 5, 6, 3];
+            renderOriginalArray();
+            clearArrays();
+            document.getElementById('stepInfo').innerHTML = 
+                '已重置数组，点击"开始排序"按钮重新开始';
+            resetLog();
+        }
+        
+        function clearArrays() {
+            document.getElementById('leftArray').innerHTML = '';
+            document.getElementById('rightArray').innerHTML = '';
+            document.getElementById('mergedArray').innerHTML = '';
+            document.getElementById('leftPointer').style.left = '-100px';
+            document.getElementById('rightPointer').style.left = '-100px';
+        }
+        
+        function resetLog() {
+            document.getElementById('logContent').innerHTML = 
+                '<div class="log-entry">准备开始归并排序...</div>';
+        }
+        
+        function addLog(message) {
+            const logContent = document.getElementById('logContent');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.textContent = message;
+            logContent.appendChild(entry);
+            logContent.scrollTop = logContent.scrollHeight;
+        }
+        
+        async function startSort() {
+            if (isSorting) return;
+            isSorting = true;
+            document.getElementById('sortBtn').disabled = true;
+            
+            clearArrays();
+            addLog('=== 开始归并排序 ===');
+            
+            const sorted = await mergeSort(originalArr, 0, originalArr.length - 1);
+            
+            // 最终结果显示
+            document.getElementById('stepInfo').innerHTML = 
+                `<strong>排序完成！</strong> 最终结果: [${sorted.join(', ')}]`;
+            addLog(`排序完成！最终结果: [${sorted.join(', ')}]`);
+            
+            // 高亮最终数组
+            const mergedArray = document.getElementById('mergedArray');
+            const items = mergedArray.querySelectorAll('.item');
+            items.forEach(item => item.classList.add('sorted'));
+            
+            document.getElementById('sortBtn').disabled = false;
+            isSorting = false;
+        }
+        
+        async function mergeSort(arr, left, right) {
+            if (left >= right) return [arr[left]];
+            
+            const mid = Math.floor((left + right) / 2);
+            
+            document.getElementById('stepInfo').innerHTML = 
+                `分割数组: [${arr.slice(left, right+1).join(', ')}] → 左:[${arr.slice(left, mid+1).join(', ')}], 右:[${arr.slice(mid+1, right+1).join(', ')}]`;
+            addLog(`分割: [${arr.slice(left, right+1).join(', ')}] → 左[${arr.slice(left, mid+1).join(', ')}], 右[${arr.slice(mid+1, right+1).join(', ')}]`);
+            
+            await sleep(stepDelay);
+            
+            const leftArr = await mergeSort(arr, left, mid);
+            const rightArr = await mergeSort(arr, mid + 1, right);
+            
+            return await merge(leftArr, rightArr);
+        }
+        
+        async function merge(left, right) {
+            // 显示左右子数组
+            renderSubArray('leftArray', left, 'left');
+            renderSubArray('rightArray', right, 'right');
+            renderSubArray('mergedArray', [], 'merged');
+            
+            await sleep(stepDelay);
+            
+            const result = [];
+            let i = 0, j = 0;
+            
+            while (i < left.length && j < right.length) {
+                // 高亮当前比较的两个元素
+                highlightComparing('leftArray', i, 'left');
+                highlightComparing('rightArray', j, 'right');
+                
+                document.getElementById('stepInfo').innerHTML = 
+                    `比较: 左[${i}]=${left[i]} vs 右[${j}]=${right[j]} → 选择较小的 ${Math.min(left[i], right[j])}`;
+                addLog(`比较: 左[${i}]=${left[i]} vs 右[${j}]=${right[j]} → 选择 ${Math.min(left[i], right[j])}`);
+                
+                await sleep(stepDelay);
+                
+                if (left[i] <= right[j]) {
+                    result.push(left[i]);
+                    i++;
+                } else {
+                    result.push(right[j]);
+                    j++;
+                }
+                
+                // 更新合并结果
+                renderSubArray('mergedArray', result, 'merged');
+                updatePointers(i, j);
+                
+                await sleep(stepDelay / 2);
+            }
+            
+            // 处理剩余元素
+            while (i < left.length) {
+                document.getElementById('stepInfo').innerHTML = 
+                    `左数组剩余: 添加 ${left[i]}`;
+                addLog(`左数组剩余: 添加 ${left[i]}`);
+                
+                result.push(left[i]);
+                i++;
+                renderSubArray('mergedArray', result, 'merged');
+                updatePointers(i, j);
+                await sleep(stepDelay / 2);
+            }
+            
+            while (j < right.length) {
+                document.getElementById('stepInfo').innerHTML = 
+                    `右数组剩余: 添加 ${right[j]}`;
+                addLog(`右数组剩余: 添加 ${right[j]}`);
+                
+                result.push(right[j]);
+                j++;
+                renderSubArray('mergedArray', result, 'merged');
+                updatePointers(i, j);
+                await sleep(stepDelay / 2);
+            }
+            
+            // 移除高亮
+            clearHighlights();
+            
+            return result;
+        }
+        
+        function renderSubArray(containerId, arr, type) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            
+            arr.forEach(num => {
+                const div = document.createElement('div');
+                div.className = `item ${type}`;
+                div.textContent = num;
+                container.appendChild(div);
+            });
+        }
+        
+        function highlightComparing(containerId, index, type) {
+            const container = document.getElementById(containerId);
+            const items = container.querySelectorAll('.item');
+            
+            // 清除之前的高亮
+            items.forEach(item => item.classList.remove('comparing'));
+            
+            // 高亮当前元素
+            if (items[index]) {
+                items[index].classList.add('comparing');
+            }
+            
+            // 更新指针位置
+            updatePointerPosition(containerId, index, type);
+        }
+        
+        function updatePointerPosition(containerId, index, type) {
+            const container = document.getElementById(containerId);
+            const pointer = document.getElementById(type === 'left' ? 'leftPointer' : 'rightPointer');
+            const items = container.querySelectorAll('.item');
+            
+            if (items[index]) {
+                const itemRect = items[index].getBoundingClientRect();
+                const containerRect = container.getBoundingClientRect();
+                const offset = itemRect.left - containerRect.left + itemRect.width/2 - 12;
+                pointer.style.left = `${offset}px`;
+            }
+        }
+        
+        function updatePointers(i, j) {
+            // 更新指针位置
+            const leftContainer = document.getElementById('leftArray');
+            const rightContainer = document.getElementById('rightArray');
+            const leftItems = leftContainer.querySelectorAll('.item');
+            const rightItems = rightContainer.querySelectorAll('.item');
+            
+            const leftPointer = document.getElementById('leftPointer');
+            const rightPointer = document.getElementById('rightPointer');
+            
+            if (leftItems[i-1]) {
+                const rect = leftItems[i-1].getBoundingClientRect();
+                const containerRect = leftContainer.getBoundingClientRect();
+                leftPointer.style.left = `${rect.left - containerRect.left + rect.width/2 - 12}px`;
+            }
+            
+            if (rightItems[j-1]) {
+                const rect = rightItems[j-1].getBoundingClientRect();
+                const containerRect = rightContainer.getBoundingClientRect();
+                rightPointer.style.left = `${rect.left - containerRect.left + rect.width/2 - 12}px`;
+            }
+        }
+        
+        function clearHighlights() {
+            document.querySelectorAll('.item').forEach(item => {
+                item.classList.remove('comparing');
+            });
+        }
+        
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+    </script>
+</body>
+</html>
